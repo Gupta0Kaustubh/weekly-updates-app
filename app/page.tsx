@@ -10,41 +10,76 @@ import { supabase } from "@/lib/supabase"
 function BackgroundAnimation() {
   return (
     <div className="absolute inset-0 -z-10 overflow-hidden">
+
       {/* Animated Gradient */}
-      <div className="w-full h-full bg-gradient-to-tr from-indigo-500 via-purple-600 to-blue-500 animate-gradient-fast" />
+      <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-600 to-blue-500 animate-gradient-ultra" />
+
+      {/* Rotating Glow Rings */}
+      <div className="absolute w-[900px] h-[900px] bg-purple-500/30 blur-[180px] rounded-full animate-spin-slow top-[10%] left-[10%]" />
+
+      <div className="absolute w-[700px] h-[700px] bg-blue-500/30 blur-[150px] rounded-full animate-spin-reverse bottom-[10%] right-[10%]" />
 
       {/* Floating Orbs */}
-      {[...Array(12)].map((_, i) => (
+      {[...Array(20)].map((_, i) => (
         <span
           key={i}
           className="absolute block rounded-full opacity-40 bg-white/30"
           style={{
-            width: `${Math.random() * 60 + 20}px`,
-            height: `${Math.random() * 60 + 20}px`,
+            width: `${Math.random() * 80 + 20}px`,
+            height: `${Math.random() * 80 + 20}px`,
             top: `${Math.random() * 100}%`,
             left: `${Math.random() * 100}%`,
-            animation: `float-fast-${i % 3} ${Math.random() * 6 + 4}s ease-in-out infinite`,
+            animation: `float-ultra-${i % 3} ${Math.random() * 4 + 2}s ease-in-out infinite`,
           }}
         />
       ))}
 
       <style jsx>{`
-        /* Floating Orbs Animations - faster */
-        @keyframes float-fast-0 { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-25px) scale(1.2); } }
-        @keyframes float-fast-1 { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-35px) scale(1.3); } }
-        @keyframes float-fast-2 { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-30px) scale(1.25); } }
 
-        /* Gradient Animation - faster */
-        @keyframes gradient-fast {
+        @keyframes float-ultra-0 {
+          0%,100% { transform: translateY(0) scale(1); }
+          50% { transform: translateY(-40px) scale(1.3); }
+        }
+
+        @keyframes float-ultra-1 {
+          0%,100% { transform: translateY(0) scale(1); }
+          50% { transform: translateY(-50px) scale(1.4); }
+        }
+
+        @keyframes float-ultra-2 {
+          0%,100% { transform: translateY(0) scale(1); }
+          50% { transform: translateY(-45px) scale(1.35); }
+        }
+
+        @keyframes gradient-ultra {
           0% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
         }
 
-        .animate-gradient-fast {
-          background-size: 200% 200%;
-          animation: gradient-fast 8s ease infinite;
+        .animate-gradient-ultra {
+          background-size: 300% 300%;
+          animation: gradient-ultra 5s ease infinite;
         }
+
+        @keyframes spinSlow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        @keyframes spinReverse {
+          from { transform: rotate(360deg); }
+          to { transform: rotate(0deg); }
+        }
+
+        .animate-spin-slow {
+          animation: spinSlow 35s linear infinite;
+        }
+
+        .animate-spin-reverse {
+          animation: spinReverse 40s linear infinite;
+        }
+
       `}</style>
     </div>
   )
