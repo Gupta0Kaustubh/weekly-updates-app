@@ -8,8 +8,6 @@ import { useCurrentWeekUser } from "@/components/week/useCurrentWeekUser"
 import { useApprovedUpdates } from "@/components/week/useApprovedUpdates"
 import CreativeLoader from "@/components/ui/CreativeLoader"
 import * as htmlToImage from "html-to-image"
-import { supabase } from "@/lib/supabase"
-import { v4 as uuidv4 } from "uuid"
 
 export default function SortablePage() {
   const { role, weekId, loading } = useCurrentWeekUser()
@@ -87,7 +85,7 @@ export default function SortablePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           imageBase64: base64,
-          recipient: "recipient@example.com", // replace or make dynamic
+          recipient: "kaustubhgupta9860@gmail.com",
         }),
       })
 
