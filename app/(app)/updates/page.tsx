@@ -6,10 +6,8 @@ import WeekBadge from "@/components/ui/WeekBadge"
 import { useCurrentWeekUser } from "@/components/week/useCurrentWeekUser"
 import CreativeLoader from "@/components/ui/CreativeLoader"
 
-export default function UpdatesPage() {
+export default function Updates() {
   const { user, role, weekId, loading } = useCurrentWeekUser()
-
-  console.log('weekId', weekId)
 
   if (loading) return <CreativeLoader text={role === "member" ? "Fetching your form..." : "Fetching your updates..."}/>
   if (!user || !weekId) return <p>No active week found.</p>

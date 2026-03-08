@@ -12,7 +12,7 @@ export default function SortableItem({
   sortable,
 }: {
   update: Update
-  onAction: (id: string, type: "approve" | "reject") => void
+  onAction: (id: string, type: "approve" | "reject" | "reset") => void
   sortable: boolean
 }) {
   const {
@@ -41,15 +41,30 @@ export default function SortableItem({
 
   return (
     <div ref={setNodeRef} style={style}>
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden relative">
 
-        {/* Status Badge */}
-        <div
-          className={`absolute top-4 right-4 px-3 py-1 text-xs font-semibold rounded-full border ${
-            statusStyles[update.status as keyof typeof statusStyles]
-          }`}
-        >
-          {update.status.toUpperCase()}
+        {/* Top Right Status + Reset */}
+        <div className="absolute top-4 right-4 flex items-center gap-2">
+
+          <div
+            className={`px-3 py-1 text-xs font-semibold rounded-full border ${
+              statusStyles[update.status as keyof typeof statusStyles]
+            }`}
+          >
+            {update.status.toUpperCase()}
+          </div>
+
+          {/* Small Reset Button */}
+          {update.status !== "pending" && (
+            <button
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => onAction(update.id, "reset")}
+              className="text-xs px-2 py-1 rounded-md bg-gray-800 hover:bg-gray-700 border border-gray-700"
+            >
+              ↺
+            </button>
+          )}
+
         </div>
 
         {/* Drag Handle */}
@@ -71,7 +86,7 @@ export default function SortableItem({
           </h3>
 
           <div className="mb-4 flex items-start justify-between gap-4">
-            
+
             {/* Description */}
             <div className="flex-1">
               <p className="text-gray-400 leading-relaxed whitespace-pre-line">
@@ -86,7 +101,6 @@ export default function SortableItem({
                   src={update.image_url}
                   alt="Update image"
                   className="w-36 h-36 object-cover rounded-lg border border-gray-800 cursor-pointer hover:opacity-90 transition"
-                  // onClick={() => window.open(update?.image_url, "_blank")}
                 />
               </div>
             )}
@@ -129,6 +143,7 @@ export default function SortableItem({
               </Button>
             </div>
           )}
+
         </div>
 
       </Card>

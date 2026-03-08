@@ -36,5 +36,29 @@ export const useUpdates = (weekId: string, onlyApproved = false, refreshKey?: nu
     setUpdates(prev => prev.map(u => (u.id === id ? { ...u, status: "rejected" } : u)))
   }
 
-  return { updates, loading, setUpdates, approveUpdate, rejectUpdate }
+  const resetUpdate = async (id: string) => {
+    const { error } = await supabase
+      .from("updates")
+      .update({ status: "pending" })
+      .eq("id", id)
+
+    if (error) {
+      console.error(error)
+      return
+    }
+
+    setUpdates(prev => {
+      const updated: Update[] = prev.map(u =>
+        u.id === id ? { ...u, status: "pending" as const } : u
+      )
+
+      if (onlyApproved) {
+        return updated.filter(u => u.status === "approved")
+      }
+
+      return updated
+    })
+  }
+
+  return { updates, loading, setUpdates, approveUpdate, rejectUpdate, resetUpdate }
 }
