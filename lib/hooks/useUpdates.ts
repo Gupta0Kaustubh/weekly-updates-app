@@ -1,4 +1,3 @@
-// hooks/useUpdates.ts
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { Update } from "@/types"
@@ -10,6 +9,7 @@ export const useUpdates = (weekId: string, onlyApproved = false, refreshKey?: nu
   useEffect(() => {
     const loadUpdates = async () => {
       setLoading(true)
+
       let query = supabase
         .from("updates")
         .select("*")
@@ -19,7 +19,9 @@ export const useUpdates = (weekId: string, onlyApproved = false, refreshKey?: nu
       if (onlyApproved) query = query.eq("status", "approved")
 
       const { data, error } = await query
+
       if (!error && data) setUpdates(data)
+
       setLoading(false)
     }
 
@@ -28,12 +30,18 @@ export const useUpdates = (weekId: string, onlyApproved = false, refreshKey?: nu
 
   const approveUpdate = async (id: string) => {
     await supabase.from("updates").update({ status: "approved" }).eq("id", id)
-    setUpdates(prev => prev.map(u => (u.id === id ? { ...u, status: "approved" } : u)))
+
+    setUpdates(prev =>
+      prev.map(u => (u.id === id ? { ...u, status: "approved" } : u))
+    )
   }
 
   const rejectUpdate = async (id: string) => {
     await supabase.from("updates").update({ status: "rejected" }).eq("id", id)
-    setUpdates(prev => prev.map(u => (u.id === id ? { ...u, status: "rejected" } : u)))
+
+    setUpdates(prev =>
+      prev.map(u => (u.id === id ? { ...u, status: "rejected" } : u))
+    )
   }
 
   const resetUpdate = async (id: string) => {
@@ -60,5 +68,36 @@ export const useUpdates = (weekId: string, onlyApproved = false, refreshKey?: nu
     })
   }
 
-  return { updates, loading, setUpdates, approveUpdate, rejectUpdate, resetUpdate }
+  const updateUpdate = async (
+    id: string,
+    data: Partial<Pick<Update, "title" | "description" | "image_url">>
+  ) => {
+    const { error } = await supabase
+      .from("updates")
+      .update(data)
+      .eq("id", id)
+
+    if (error) {
+      console.error(error)
+      return
+    }
+
+    setUpdates(prev =>
+      prev.map(u =>
+        u.id === id
+          ? { ...u, ...data }
+          : u
+      )
+    )
+  }
+
+  return {
+    updates,
+    loading,
+    setUpdates,
+    approveUpdate,
+    rejectUpdate,
+    resetUpdate,
+    updateUpdate,
+  }
 }
