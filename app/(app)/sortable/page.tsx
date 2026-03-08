@@ -8,6 +8,7 @@ import { useCurrentWeekUser } from "@/components/week/useCurrentWeekUser"
 import { useApprovedUpdates } from "@/components/week/useApprovedUpdates"
 import CreativeLoader from "@/components/ui/CreativeLoader"
 import * as htmlToImage from "html-to-image"
+import { supabase } from "@/lib/supabase"
 
 export default function SortablePage() {
   const { role, weekId, loading } = useCurrentWeekUser()
@@ -97,6 +98,42 @@ export default function SortablePage() {
     }
   }
 
+  const handlePublish = async () => {
+    if (!weekId) return
+
+    try {
+
+      // Remove previous publish for this week
+      await supabase
+        .from("published_newsletters")
+        .delete()
+        .eq("week_id", weekId)
+
+      // Create rows from approved updates
+      const rows = approvedUpdates.map((update, index) => ({
+        week_id: weekId,
+        update_id: update.id,
+        position: index
+      }))
+
+      const { error } = await supabase
+        .from("published_newsletters")
+        .insert(rows)
+
+      if (error) {
+        console.error(error)
+        alert("Failed to publish newsletter")
+        return
+      }
+
+      alert("Newsletter published successfully!")
+
+    } catch (err) {
+      console.error(err)
+      alert("Error publishing newsletter")
+    }
+  }
+
   return (
     <div className="p-6 relative">
 
@@ -121,34 +158,46 @@ export default function SortablePage() {
           <WeeklyNewsletter
             ref={newsletterRef}
             updates={approvedUpdates}
-            weekTitle="This Week's Chronicle"
+            weekTitle="This Week's Edition"
           />
         </div>
 
       </div>
 
       {/* Floating Buttons */}
-      <div className="fixed bottom-3 right-24 flex flex-row gap-3 z-50">
-        {/* Publish */}
+      <div className="absolute bottom-[-28px] right-6 flex gap-3">
         <button
-          onClick={() => alert("Publish clicked! (no action yet)")}
-          className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg"
+          onClick={handlePublish}
+          className={`font-bold py-2 px-5 rounded-lg shadow-lg text-white
+          ${approvedUpdates.length === 0 
+            ? "bg-gray-500 cursor-not-allowed opacity-50" 
+            : "bg-green-600 hover:bg-green-700"}
+        `}
+          disabled={approvedUpdates.length === 0}
         >
           Publish
         </button>
 
-        {/* Download */}
         <button
           onClick={handleDownload}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg"
+          className={`font-bold py-2 px-5 rounded-lg shadow-lg text-white
+          ${approvedUpdates.length === 0 
+            ? "bg-gray-500 cursor-not-allowed opacity-50" 
+            : "bg-indigo-600 hover:bg-indigo-700"}
+        `}
+        disabled={approvedUpdates.length === 0}
         >
           Download
         </button>
 
-        {/* Share */}
         <button
           onClick={handleShare}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg"
+          className={`font-bold py-2 px-5 rounded-lg shadow-lg text-white
+          ${approvedUpdates.length === 0 
+            ? "bg-gray-500 cursor-not-allowed opacity-50" 
+            : "bg-blue-600 hover:bg-blue-700"}
+        `}
+        disabled={approvedUpdates.length === 0}
         >
           Share
         </button>

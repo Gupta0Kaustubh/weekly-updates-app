@@ -23,13 +23,13 @@ export default function UpdateSortableAdminList({
   onlyApproved = false,
   sortable = true,
 }: Props) {
-  const { updates, loading, setUpdates, approveUpdate, rejectUpdate } = useUpdates(
+  const { updates, loading, setUpdates, approveUpdate, rejectUpdate, resetUpdate} = useUpdates(
     weekId,
     onlyApproved,
     refreshKey
   )
   const { sensors, handleDragEnd } = useSortableUpdates(updates, setUpdates, onRefresh)
-  const [confirmData, setConfirmData] = useState<{ id: string; type: "approve" | "reject" } | null>(null)
+  const [confirmData, setConfirmData] = useState<{ id: string; type: "approve" | "reject" | "reset" } | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
 
   if (loading) return <p>Loading updates...</p>
@@ -85,7 +85,10 @@ export default function UpdateSortableAdminList({
           if (!confirmData) return
           setActionLoading(true)
           if (confirmData.type === "approve") await approveUpdate(confirmData.id)
-          else await rejectUpdate(confirmData.id)
+          else if (confirmData.type === "reject") await rejectUpdate(confirmData.id)
+          else if (confirmData.type === "reset") await resetUpdate(confirmData.id)
+
+          onRefresh?.()
           setActionLoading(false)
           setConfirmData(null)
         }}
