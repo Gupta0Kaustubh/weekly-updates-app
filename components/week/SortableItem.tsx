@@ -9,10 +9,12 @@ import { CSS } from "@dnd-kit/utilities"
 export default function SortableItem({
   update,
   onAction,
+  onEdit,
   sortable,
 }: {
   update: Update
   onAction: (id: string, type: "approve" | "reject" | "reset") => void
+  onEdit: (update: Update) => void
   sortable: boolean
 }) {
   const {
@@ -54,7 +56,6 @@ export default function SortableItem({
             {update.status.toUpperCase()}
           </div>
 
-          {/* Small Reset Button */}
           {update.status !== "pending" && (
             <button
               onPointerDown={(e) => e.stopPropagation()}
@@ -109,6 +110,7 @@ export default function SortableItem({
 
           {/* Footer */}
           <div className="flex justify-between items-center text-sm text-gray-400 border-t border-gray-800 pt-4">
+
             <span>
               Submitted by{" "}
               <span className="font-medium text-gray-200">
@@ -116,16 +118,31 @@ export default function SortableItem({
               </span>
             </span>
 
-            {(update.impact_score ?? 0) > 7 && (
-              <span className="bg-yellow-500/10 text-yellow-400 px-3 py-1 rounded-full text-xs font-semibold border border-yellow-500/30">
-                🔥 High Impact
-              </span>
-            )}
+            <div className="flex items-center gap-3">
+
+              {(update.impact_score ?? 0) > 7 && (
+                <span className="bg-yellow-500/10 text-yellow-400 px-3 py-1 rounded-full text-xs font-semibold border border-yellow-500/30">
+                  🔥 High Impact
+                </span>
+              )}
+
+              {/* EDIT BUTTON */}
+              <button
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => onEdit(update)}
+                className="text-xs px-3 py-1 rounded-md bg-blue-600 hover:bg-blue-700"
+              >
+                Edit
+              </button>
+
+            </div>
+
           </div>
 
           {/* Actions */}
           {update.status === "pending" && (
             <div className="mt-5 flex justify-end gap-3">
+
               <Button
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => onAction(update.id, "reject")}
@@ -141,6 +158,7 @@ export default function SortableItem({
               >
                 Approve
               </Button>
+
             </div>
           )}
 
