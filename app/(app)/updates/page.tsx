@@ -9,6 +9,8 @@ import CreativeLoader from "@/components/ui/CreativeLoader"
 export default function UpdatesPage() {
   const { user, role, weekId, loading } = useCurrentWeekUser()
 
+  console.log('weekId', weekId)
+
   if (loading) return <CreativeLoader text={role === "member" ? "Fetching your form..." : "Fetching your updates..."}/>
   if (!user || !weekId) return <p>No active week found.</p>
 
