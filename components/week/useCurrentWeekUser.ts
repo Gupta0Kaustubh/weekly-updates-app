@@ -31,14 +31,36 @@ export function useCurrentWeekUser() {
 
       if (profile?.role) setRole(profile.role)
 
-      const today = new Date().toISOString().split("T")[0]
+      const today = new Date()
+      const todayStr = new Date().toLocaleDateString("en-CA")
 
-      const { data: week } = await supabase
+      let { data: week } = await supabase
         .from("weeks")
         .select("id")
-        .lte("start_date", today)
-        .gte("end_date", today)
+        .lte("start_date", todayStr)
+        .gte("end_date", todayStr)
+        .limit(1)
         .single()
+
+      if (!week) {
+        const start = new Date(today)
+        const day = today.getDay() || 7
+        start.setDate(today.getDate() - day + 1)
+
+        const end = new Date(start)
+        end.setDate(start.getDate() + 6)
+
+        const { data: newWeek } = await supabase
+          .from("weeks")
+          .insert({
+            start_date: start.toISOString().split("T")[0],
+            end_date: end.toISOString().split("T")[0],
+          })
+          .select("id")
+          .single()
+
+        week = newWeek
+      }
 
       setWeekId(week?.id ?? null)
       setLoading(false)
