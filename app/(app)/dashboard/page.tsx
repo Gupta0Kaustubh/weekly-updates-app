@@ -1,162 +1,24 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase"
-import { Update } from "@/types"
 import NewsletterCard from "./NewsletterCard"
-import MultiSelectDropdown from "@/components/ui/MultiSelectDropdown"
-
-type WeekCard = {
-  id: string
-  title: string
-  start_date: string
-  end_date: string
-  updates: Update[]
-}
+import { useDashboard } from "./useDashboard"
+import { DashboardFilters } from "./DashboardFilters"
 
 export default function DashboardPage() {
-  const [weeks, setWeeks] = useState<WeekCard[]>([])
-  const [allWeeks, setAllWeeks] = useState<WeekCard[]>([])
-  const [loading, setLoading] = useState(true)
-
-  const [profileNames, setProfileNames] = useState<string[]>([])
-  const [selectedNames, setSelectedNames] = useState<string[]>([])
-  const [searchText, setSearchText] = useState("")
-
-  // Multi-select filters for month and year
-  const [months, setMonths] = useState<string[]>([])
-  const [selectedMonths, setSelectedMonths] = useState<string[]>([])
-  const [years, setYears] = useState<string[]>([])
-  const [selectedYears, setSelectedYears] = useState<string[]>([])
-
-  // Fetch newsletters and profiles
-  useEffect(() => {
-    const fetchNewsletters = async () => {
-      const { data, error } = await supabase
-        .from("published_newsletters")
-        .select(`
-          position,
-          weeks (
-            id,
-            title,
-            start_date,
-            end_date
-          ),
-          updates (
-            id,
-            title,
-            description,
-            image_url,
-            submitted_by_name
-          )
-        `)
-        .order("position", { ascending: true })
-
-      if (error) {
-        console.error(error)
-        setLoading(false)
-        return
-      }
-
-      const grouped: Record<string, WeekCard> = {}
-
-      data.forEach((row: any) => {
-        const week = row.weeks
-        const update = row.updates
-
-        if (!grouped[week.id]) {
-          grouped[week.id] = {
-            id: week.id,
-            title: week.title,
-            start_date: week.start_date,
-            end_date: week.end_date,
-            updates: []
-          }
-        }
-
-        grouped[week.id].updates.push(update)
-      })
-
-      const sorted = Object.values(grouped).sort(
-        (a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
-      )
-
-      setWeeks(sorted)
-      setAllWeeks(sorted)
-
-      // Populate months and years from newsletter dates
-      const monthSet = new Set<string>()
-      const yearSet = new Set<string>()
-      sorted.forEach((week) => {
-        const date = new Date(week.start_date)
-        monthSet.add(date.toLocaleString("default", { month: "long" }))
-        yearSet.add(date.getFullYear().toString())
-      })
-
-      setMonths(Array.from(monthSet))
-      setYears(Array.from(yearSet))
-
-      setLoading(false)
-    }
-
-    const fetchProfiles = async () => {
-      const { data, error } = await supabase.from("profiles").select("name")
-      if (error) {
-        console.error(error)
-        return
-      }
-      if (data) setProfileNames(data.map((p: any) => p.name))
-    }
-
-    fetchNewsletters()
-    fetchProfiles()
-  }, [])
-
-  // Combined filter: people + months + years
-  useEffect(() => {
-    let filtered = allWeeks
-
-    // People filter
-    if (selectedNames.length > 0 || searchText) {
-      filtered = filtered.filter((week) =>
-        week.updates.some((update) => {
-          const normalizedDescription = update.description?.replace(/\s+/g, "").toLowerCase()
-
-          // Dropdown selection match
-          const selectedMatch = selectedNames.some((name) => {
-            const fullName = name.replace(/\s+/g, "").toLowerCase()
-            const firstName = name.split(" ")[0].toLowerCase()
-            return normalizedDescription?.includes(fullName) || normalizedDescription?.includes(firstName)
-          })
-
-          // Free text match
-          const searchMatch = searchText
-            ? normalizedDescription?.includes(searchText.replace(/\s+/g, "").toLowerCase())
-            : false
-
-          return selectedMatch || searchMatch
-        })
-      )
-    }
-
-    // Month filter
-    if (selectedMonths.length > 0) {
-      filtered = filtered.filter((week) => {
-        const monthName = new Date(week.start_date).toLocaleString("default", { month: "long" })
-        return selectedMonths.includes(monthName)
-      })
-    }
-
-    // Year filter
-    if (selectedYears.length > 0) {
-      filtered = filtered.filter((week) => {
-        const year = new Date(week.start_date).getFullYear().toString()
-        return selectedYears.includes(year)
-      })
-    }
-
-    setWeeks(filtered)
-  }, [selectedNames, selectedMonths, selectedYears, searchText, allWeeks])
+  const {
+    weeks,
+    loading,
+    profileNames,
+    selectedNames,
+    setSelectedNames,
+    setSearchText,
+    months,
+    selectedMonths,
+    setSelectedMonths,
+    years,
+    selectedYears,
+    setSelectedYears,
+  } = useDashboard()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white">
@@ -170,46 +32,18 @@ export default function DashboardPage() {
       </div>
 
       {/* Filters */}
-      <div className="px-8 pb-4 flex items-center gap-4 flex-wrap">
-        {/* People filter */}
-        <MultiSelectDropdown
-          options={profileNames}
-          selected={selectedNames}
-          onChange={setSelectedNames}
-          placeholder="Filter by people"
-          enableSearch
-          onSearchChange={setSearchText}
-        />
-
-        {/* Year filter */}
-        <MultiSelectDropdown
-          options={years}
-          selected={selectedYears}
-          onChange={setSelectedYears}
-          placeholder="Filter by year"
-        />
-
-        {/* Month filter */}
-        <MultiSelectDropdown
-          options={months}
-          selected={selectedMonths}
-          onChange={setSelectedMonths}
-          placeholder="Filter by month"
-        />
-
-        {(selectedNames.length > 0 || selectedMonths.length > 0 || selectedYears.length > 0) && (
-          <button
-            onClick={() => {
-              setSelectedNames([])
-              setSelectedMonths([])
-              setSelectedYears([])
-            }}
-            className="text-sm text-gray-400 hover:text-white"
-          >
-            Clear Filters
-          </button>
-        )}
-      </div>
+      <DashboardFilters
+        profileNames={profileNames}
+        selectedNames={selectedNames}
+        setSelectedNames={setSelectedNames}
+        setSearchText={setSearchText}
+        years={years}
+        selectedYears={selectedYears}
+        setSelectedYears={setSelectedYears}
+        months={months}
+        selectedMonths={selectedMonths}
+        setSelectedMonths={setSelectedMonths}
+      />
 
       {/* Content */}
       <div className="px-8 pb-10">
@@ -233,4 +67,4 @@ export default function DashboardPage() {
       </div>
     </div>
   )
-}
+}
