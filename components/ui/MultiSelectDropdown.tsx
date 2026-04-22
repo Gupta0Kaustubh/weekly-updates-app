@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useMemo } from "react"
 import { ChevronDown } from "lucide-react"
 
 type Props = {
@@ -8,16 +8,21 @@ type Props = {
   selected: string[]
   onChange: (values: string[]) => void
   placeholder?: string
+  enableSearch?: boolean
+  onSearchChange?: (value: string) => void // ✅ NEW
 }
 
 export default function MultiSelectDropdown({
   options,
   selected,
   onChange,
-  placeholder = "Select"
+  placeholder = "Select",
+  enableSearch = false,
+  onSearchChange
 }: Props) {
 
   const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState("")
   const ref = useRef<HTMLDivElement>(null)
 
   const toggle = (value: string) => {
@@ -38,6 +43,15 @@ export default function MultiSelectDropdown({
     document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
+
+  // Filter options only if search is enabled
+  const filteredOptions = useMemo(() => {
+    if (!enableSearch) return options
+
+    return options.filter((opt) =>
+      opt.toLowerCase().includes(search.toLowerCase())
+    )
+  }, [options, search, enableSearch])
 
   return (
     <div ref={ref} className="relative w-64">
@@ -64,21 +78,48 @@ export default function MultiSelectDropdown({
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute mt-2 w-full bg-gray-900 border border-gray-700 rounded-lg max-h-60 overflow-y-auto z-10">
+        <div className="absolute mt-2 w-full bg-gray-900 border border-gray-700 rounded-lg max-h-60 z-10">
 
-          {options.map((opt) => (
-            <label
-              key={opt}
-              className="flex items-center gap-2 px-3 py-2 hover:bg-gray-800 cursor-pointer text-sm"
-            >
+          {/* Search (only if enabled) */}
+          {enableSearch && (
+            <div className="p-2 border-b border-gray-700">
               <input
-                type="checkbox"
-                checked={selected.includes(opt)}
-                onChange={() => toggle(opt)}
+                type="text"
+                placeholder="Search..."
+                value={search}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setSearch(value)
+                  onSearchChange?.(value) // ✅ free text search to parent
+                }}
+                className="w-full bg-gray-800 text-white text-sm px-2 py-1 rounded outline-none"
+                autoFocus
               />
-              {opt}
-            </label>
-          ))}
+            </div>
+          )}
+
+          {/* Options */}
+          <div className="max-h-48 overflow-y-auto">
+            {filteredOptions.length === 0 && (
+              <div className="px-3 py-2 text-gray-400 text-sm">
+                No results
+              </div>
+            )}
+
+            {filteredOptions.map((opt) => (
+              <label
+                key={opt}
+                className="flex items-center gap-2 px-3 py-2 hover:bg-gray-800 cursor-pointer text-sm"
+              >
+                <input
+                  type="checkbox"
+                  checked={selected.includes(opt)}
+                  onChange={() => toggle(opt)}
+                />
+                {opt}
+              </label>
+            ))}
+          </div>
 
         </div>
       )}
