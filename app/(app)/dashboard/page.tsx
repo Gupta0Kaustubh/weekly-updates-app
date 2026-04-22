@@ -21,6 +21,7 @@ export default function DashboardPage() {
 
   const [profileNames, setProfileNames] = useState<string[]>([])
   const [selectedNames, setSelectedNames] = useState<string[]>([])
+  const [searchText, setSearchText] = useState("")
 
   // Multi-select filters for month and year
   const [months, setMonths] = useState<string[]>([])
@@ -116,16 +117,25 @@ export default function DashboardPage() {
     let filtered = allWeeks
 
     // People filter
-    if (selectedNames.length > 0) {
+    if (selectedNames.length > 0 || searchText) {
       filtered = filtered.filter((week) =>
-        week.updates.some((update) =>
-          selectedNames.some((name) => {
-            const normalizedDescription = update.description?.replace(/\s+/g, "").toLowerCase()
+        week.updates.some((update) => {
+          const normalizedDescription = update.description?.replace(/\s+/g, "").toLowerCase()
+
+          // Dropdown selection match
+          const selectedMatch = selectedNames.some((name) => {
             const fullName = name.replace(/\s+/g, "").toLowerCase()
             const firstName = name.split(" ")[0].toLowerCase()
             return normalizedDescription?.includes(fullName) || normalizedDescription?.includes(firstName)
           })
-        )
+
+          // Free text match
+          const searchMatch = searchText
+            ? normalizedDescription?.includes(searchText.replace(/\s+/g, "").toLowerCase())
+            : false
+
+          return selectedMatch || searchMatch
+        })
       )
     }
 
@@ -146,7 +156,7 @@ export default function DashboardPage() {
     }
 
     setWeeks(filtered)
-  }, [selectedNames, selectedMonths, selectedYears, allWeeks])
+  }, [selectedNames, selectedMonths, selectedYears, searchText, allWeeks])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white">
@@ -167,6 +177,8 @@ export default function DashboardPage() {
           selected={selectedNames}
           onChange={setSelectedNames}
           placeholder="Filter by people"
+          enableSearch
+          onSearchChange={setSearchText}
         />
 
         {/* Year filter */}
