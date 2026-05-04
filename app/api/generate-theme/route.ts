@@ -6,6 +6,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 const THEME_PROMPT = (occasion: string, customPrompt: string) => `
 You are an expert magazine and email newsletter designer. 
 Your job is to create a beautiful ThemeConfig JSON based on the occasion and prompt.
+The magazine should feel unique, high-end, and custom-tailored to the content.
 
 Occasion: ${occasion}
 ${customPrompt ? `Additional style instructions: ${customPrompt}` : ""}
@@ -27,23 +28,30 @@ Return ONLY a valid JSON object with exactly these keys (no markdown, no explana
   "dropCap": true or false,
   "layout": "one of: editorial | modern | minimal | hero-grid | magazine-spread",
   "headerEmoji": "a single relevant emoji, or empty string",
-  "tagline": "a short evocative edition tagline, e.g. 'Celebrating Excellence' or 'Innovation Edition'"
+  "tagline": "a short evocative edition tagline, e.g. 'Celebrating Excellence' or 'Innovation Edition'",
+  "customStyles": {
+    "--article-padding": "css size, e.g. 1.5rem or 4rem",
+    "--article-radius": "css size for image corners, e.g. 0px, 12px, or 50px",
+    "--header-size": "css size for main title, e.g. 4rem or clamp(2rem, 8vw, 6rem)",
+    "--tagline-tracking": "css letter-spacing, e.g. 0.1em or 0.8em",
+    "--grid-gap": "css gap between articles, e.g. 1rem or 5rem"
+  }
 }
 
 Design guidelines per occasion:
-- "achievement" or "award": rich gold/amber palette (#fef9c3, #92400e), serif font, drop cap true, layout: hero-grid, festive, sepia or none image filter
-- "project_completion": confident blue/teal (#e0f2fe, #0369a1), clean sans-serif, layout: magazine-spread, none image filter
-- "promotion": royal purple/violet (#f3e8ff, #6d28d9), elegant serif, layout: editorial, sepia filter
-- "anniversary": warm rose/pink (#fff1f2, #be123c), celebratory, serif, layout: hero-grid, saturate image filter
-- "team_milestone": energetic green/emerald (#ecfdf5, #065f46), layout: magazine-spread, none filter
-- "general": neutral warm (#f9fafb, #111827), clean, professional, layout: editorial
+- "achievement": Rich gold/amber, serif font, bold headlines, large drop caps, wide tracking on tagline.
+- "project_completion": Technical blue/teal, sans-serif, tight grids, minimal padding, clean lines.
+- "promotion": Royal purple, elegant serif, generous white space (large grid-gap), sophisticated and airy.
+- "anniversary": Warm rose/red, celebratory, bouncy emojis, rounded corners (large article-radius).
+- "team_milestone": Energetic green, modern/minimal, tight layout, bold accent colors.
+- "general": Neutral warm, professional, classic editorial feel.
 
 Rules:
-- Use HARMONIOUS color pairs, not plain primary colors  
-- backgroundColor and headerBg should complement each other
-- accentBgColor should be a very light (90%+ lightness) tint of accentColor
-- All hex values must be valid 6-digit hex codes starting with #
-- Return raw JSON only, no code blocks, no extra text
+- Be CREATIVE with the customStyles to make the design unique.
+- Use HARMONIOUS color pairs.
+- accentBgColor should be a very light (90%+ lightness) tint of accentColor.
+- All hex values must be valid 6-digit hex codes.
+- Return raw JSON only, no code blocks.
 `
 
 export async function POST(req: NextRequest) {
