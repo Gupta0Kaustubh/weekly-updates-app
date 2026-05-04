@@ -67,34 +67,45 @@ export default function MagazineContent({ updates, weekTitle, theme: themeProp }
   const fontFamily = fontFamilyMap[t.fontFamily]
   const imgFilter = imageFilterMap[t.imageFilter]
 
+  // Default fine-tuning variables if not provided by AI
+  const aiStyles = {
+    "--article-padding": "2rem",
+    "--article-radius": "4px",
+    "--header-size": "clamp(3rem, 10vw, 5rem)",
+    "--tagline-tracking": "0.4em",
+    "--grid-gap": "3rem",
+    ...t.customStyles,
+  } as React.CSSProperties
+
   // ── Article Component (reusable) ──
   const Article = ({ update, index, isHero = false }: { update: Update; index: number; isHero?: boolean }) => (
     <article
-      className={`transition-colors duration-500 ${isHero ? "mb-16" : "pb-8"}`}
+      className={`transition-all duration-500 ${isHero ? "mb-16" : "pb-8"}`}
       style={{
         borderBottom: t.layout === "editorial" || t.layout === "modern" ? `1px solid ${t.borderColor}` : "none",
+        paddingBottom: "var(--article-padding)",
       }}
     >
       {/* Accent Bar */}
       {t.layout === "modern" && (
-        <div className="w-10 h-1 mb-4 rounded-full" style={{ backgroundColor: t.accentColor }} />
+        <div className="w-10 h-1 mb-6 rounded-full" style={{ backgroundColor: t.accentColor }} />
       )}
 
       {/* Story Pill */}
       {(t.layout === "minimal" || t.layout === "magazine-spread") && (
-        <div className="mb-3">
+        <div className="mb-4">
           <span
-            className="text-[10px] uppercase tracking-[0.2em] px-2 py-0.5 rounded-full font-semibold"
+            className="text-[10px] uppercase tracking-[0.2em] px-3 py-1 rounded-full font-bold shadow-sm"
             style={{ backgroundColor: t.accentBgColor, color: t.accentColor }}
           >
-            Story {String(index + 1).padStart(2, "0")}
+            Edition {String(index + 1).padStart(2, "0")}
           </span>
         </div>
       )}
 
       {/* Headline */}
       <h2
-        className={`${isHero ? "text-6xl" : "text-3xl"} font-bold leading-tight mb-4 transition-colors duration-500`}
+        className={`${isHero ? "text-6xl md:text-7xl" : "text-3xl md:text-4xl"} font-bold leading-[1.1] mb-6 transition-colors duration-500 tracking-tight`}
         style={{ color: t.headerTextColor, fontFamily }}
       >
         {update.title}
@@ -102,40 +113,43 @@ export default function MagazineContent({ updates, weekTitle, theme: themeProp }
 
       {/* Byline */}
       <div
-        className="text-xs mb-6 flex justify-between items-center py-2"
+        className="text-[11px] mb-8 flex justify-between items-center py-3 uppercase tracking-wider font-medium"
         style={{
           borderTop: isHero ? `1px solid ${t.borderColor}` : "none",
           borderBottom: isHero ? `1px solid ${t.borderColor}` : "none",
           color: t.bodyTextColor,
-          opacity: 0.7,
+          opacity: 0.8,
         }}
       >
         <span>
-          By <span className="font-semibold">{update.submitted_by_name}</span>
+          By <span className="font-bold">{update.submitted_by_name}</span>
         </span>
         {t.layout !== "minimal" && !isHero && (
-          <span className="uppercase tracking-widest opacity-50">#{index + 1}</span>
+          <span className="opacity-40">#{index + 1}</span>
         )}
       </div>
 
       {/* Image */}
       {update.image_url && (
-        <figure className="mb-6 overflow-hidden rounded-sm">
+        <figure 
+          className="mb-8 overflow-hidden transition-transform duration-700 hover:scale-[1.02]"
+          style={{ borderRadius: "var(--article-radius)" }}
+        >
           <img
             src={update.image_url}
             alt={update.title}
-            className={`w-full ${isHero ? "h-[450px]" : "h-[200px]"} object-cover transition-all duration-500 hover:scale-105`}
+            className={`w-full ${isHero ? "h-[500px]" : "h-[250px]"} object-cover transition-all duration-700`}
             style={{ filter: imgFilter }}
           />
         </figure>
       )}
 
       {/* Body */}
-      <div className={`${isHero ? "text-lg" : "text-sm"} leading-relaxed text-justify`}>
+      <div className={`${isHero ? "text-xl" : "text-base"} leading-relaxed text-justify`}>
         <p
           className={
             t.dropCap && isHero
-              ? "first-letter:text-8xl first-letter:font-bold first-letter:mr-3 first-letter:float-left first-letter:leading-none"
+              ? "first-letter:text-8xl first-letter:font-bold first-letter:mr-4 first-letter:float-left first-letter:leading-none first-letter:text-indigo-600"
               : ""
           }
           style={{ color: t.bodyTextColor }}
@@ -148,31 +162,45 @@ export default function MagazineContent({ updates, weekTitle, theme: themeProp }
 
   return (
     <div
-      className="min-h-screen transition-colors duration-700"
-      style={{ backgroundColor: t.backgroundColor, color: t.bodyTextColor, fontFamily }}
+      className="min-h-screen transition-all duration-700"
+      style={{ 
+        backgroundColor: t.backgroundColor, 
+        color: t.bodyTextColor, 
+        fontFamily,
+        ...aiStyles 
+      }}
     >
       {/* ── Header ── */}
       <header
-        className="text-center pt-12 pb-8 transition-all duration-500"
-        style={{ backgroundColor: t.headerBg, borderBottom: `2px solid ${t.borderColor}` }}
+        className="text-center pt-20 pb-12 transition-all duration-700"
+        style={{ backgroundColor: t.headerBg, borderBottom: `4px double ${t.borderColor}` }}
       >
-        {t.headerEmoji && <div className="text-6xl mb-4 animate-pulse">{t.headerEmoji}</div>}
-        <h1 className="text-7xl font-black tracking-tighter uppercase px-4" style={{ color: t.headerTextColor }}>
+        {t.headerEmoji && <div className="text-7xl mb-6 animate-bounce">{t.headerEmoji}</div>}
+        <h1 
+          className="font-black tracking-tighter uppercase px-6 leading-none" 
+          style={{ color: t.headerTextColor, fontSize: "var(--header-size)" }}
+        >
           {weekTitle || "The Weekly Journal"}
         </h1>
-        <p className="mt-4 text-[10px] tracking-[0.4em] uppercase opacity-60" style={{ color: t.headerTextColor }}>
+        <p 
+          className="mt-6 text-xs uppercase opacity-70 font-semibold" 
+          style={{ color: t.headerTextColor, letterSpacing: "var(--tagline-tracking)" }}
+        >
           {formatDate()} • {t.tagline}
         </p>
       </header>
 
       {/* ── Dynamic Layout Engine ── */}
-      <main className="max-w-7xl mx-auto px-6 md:px-12 py-12">
+      <main 
+        className="max-w-7xl mx-auto px-6 md:px-16 py-16"
+        style={{ gap: "var(--grid-gap)" }}
+      >
         
-        {/* 1. HERO GRID: Giant first post, then 2-col grid */}
+        {/* 1. HERO GRID */}
         {t.layout === "hero-grid" ? (
-          <div>
+          <div style={{ display: 'grid', gap: 'var(--grid-gap)' }}>
             {updates.length > 0 && <Article update={updates[0]} index={0} isHero={true} />}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 'var(--grid-gap)' }}>
               {updates.slice(1).map((u, i) => (
                 <Article key={u.id} update={u} index={i + 1} />
               ))}
@@ -180,18 +208,18 @@ export default function MagazineContent({ updates, weekTitle, theme: themeProp }
           </div>
         ) 
         
-        // 2. MAGAZINE SPREAD: 3-column dense layout
+        // 2. MAGAZINE SPREAD
         : t.layout === "magazine-spread" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3" style={{ gap: 'var(--grid-gap)' }}>
             {updates.map((u, i) => (
               <Article key={u.id} update={u} index={i} />
             ))}
           </div>
         )
 
-        // 3. DEFAULT/EDITORIAL: Single column vertical list
+        // 3. DEFAULT/EDITORIAL
         : (
-          <div className="space-y-16 max-w-3xl mx-auto">
+          <div className="max-w-4xl mx-auto" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--grid-gap)' }}>
             {updates.map((u, i) => (
               <Article key={u.id} update={u} index={i} isHero={i === 0 && t.layout === "editorial"} />
             ))}
