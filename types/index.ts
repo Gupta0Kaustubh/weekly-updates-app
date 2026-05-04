@@ -19,6 +19,8 @@ export type ThemeConfig = {
   // Branding
   headerEmoji: string
   tagline: string
+  // AI-controlled fine-tuning
+  customStyles?: Record<string, string>
 }
 
 export type Profile = {
