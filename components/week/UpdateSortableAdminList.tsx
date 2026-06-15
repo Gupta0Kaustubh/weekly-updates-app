@@ -8,6 +8,8 @@ import SortableItem from "./SortableItem"
 import { useUpdates } from "@/lib/hooks/useUpdates"
 import { useSortableUpdates } from "@/lib/hooks/useSortableUpdates"
 import EditUpdateDialog from "./EditUpdateDialog"
+import { useProfiles } from "@/lib/hooks/useProfiles"
+import { formatDescriptionToDisplay, formatDescriptionToDb } from "@/lib/mentions"
 
 type Props = {
   weekId: string
@@ -24,7 +26,7 @@ export default function UpdateSortableAdminList({
   onlyApproved = false,
   sortable = true,
 }: Props) {
-
+  const { profiles } = useProfiles()
   const {
     updates,
     loading,
@@ -117,10 +119,15 @@ export default function UpdateSortableAdminList({
       {/* EDIT DIALOG */}
       <EditUpdateDialog
         open={!!editData}
-        update={editData}
+        update={editData ? {
+          ...editData,
+          description: formatDescriptionToDisplay(editData.description, profiles)
+        } : null}
+        profiles={profiles}
         onCancel={() => setEditData(null)}
         onSave={async (data) => {
-          await updateUpdate(editData.id, data)
+          const dbDescription = formatDescriptionToDb(data.description, profiles)
+          await updateUpdate(editData.id, { ...data, description: dbDescription })
           setEditData(null)
           onRefresh?.()
         }}

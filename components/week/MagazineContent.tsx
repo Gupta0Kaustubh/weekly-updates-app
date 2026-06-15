@@ -1,4 +1,8 @@
+"use client"
+
 import { Update } from "@/types"
+import { useProfiles } from "@/lib/hooks/useProfiles"
+import { renderDescriptionWithMentions } from "@/lib/mentions"
 
 type Props = {
   updates: Update[]
@@ -14,22 +18,9 @@ function formatDate() {
   })
 }
 
-function renderMentions(text: string) {
-  return text.split(/(@\w+)/g).map((part, i) =>
-    part.startsWith("@") ? (
-      <span
-        key={i}
-        className="font-semibold text-indigo-600 bg-indigo-100 px-1 rounded"
-      >
-        {part}
-      </span>
-    ) : (
-      part
-    )
-  )
-}
-
 export default function MagazineContent({ updates, weekTitle }: Props) {
+  const { profiles } = useProfiles()
+
   return (
     <div className="bg-[#f4f1ea] min-h-screen text-gray-900 font-serif">
       {/* Masthead */}
@@ -86,7 +77,7 @@ export default function MagazineContent({ updates, weekTitle }: Props) {
             {/* Body */}
             <div className="text-[15px] leading-[1.8] text-justify columns-1 gap-12">
               <p className="first-letter:text-8xl first-letter:font-bold first-letter:mr-3 first-letter:float-left first-letter:leading-none">
-                {renderMentions(update.description)}
+                {renderDescriptionWithMentions(update.description, profiles, "font-semibold text-indigo-600 bg-indigo-100 px-1 rounded")}
               </p>
             </div>
           </article>

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import { getUpdatesByWeek } from "@/services/updateService"
 import { Update } from "@/types"
 import Card from "../ui/Card"
+import { useProfiles } from "@/lib/hooks/useProfiles"
+import { renderDescriptionWithMentions } from "@/lib/mentions"
 
 type Props = {
   weekId: string
@@ -11,6 +13,7 @@ type Props = {
 }
 
 export default function UpdateList({ weekId, refreshKey }: Props) {
+  const { profiles } = useProfiles()
   const [updates, setUpdates] = useState<Update[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -35,7 +38,7 @@ export default function UpdateList({ weekId, refreshKey }: Props) {
       {updates.map((update) => (
         <Card key={update.id}>
             <strong className="text-white">{update.title}</strong>
-            <p className="text-gray-300">{update.description}</p>
+            <p className="text-gray-300">{renderDescriptionWithMentions(update.description, profiles)}</p>
             <small className="text-gray-400">Status: {update.status}</small>
         </Card>
         ))}

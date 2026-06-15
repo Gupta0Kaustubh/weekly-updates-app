@@ -1,6 +1,8 @@
 import { useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { v4 as uuidv4 } from "uuid"
+import { useProfiles } from "@/lib/hooks/useProfiles"
+import { formatDescriptionToDb } from "@/lib/mentions"
 
 type UseUpdateSubmitProps = {
   weekId: string
@@ -10,6 +12,7 @@ type UseUpdateSubmitProps = {
 }
 
 export function useUpdateSubmit({ weekId, userId, userName, onSubmitted }: UseUpdateSubmitProps) {
+  const { profiles } = useProfiles()
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [impactScore, setImpactScore] = useState<number>(5)
@@ -64,12 +67,14 @@ export function useUpdateSubmit({ weekId, userId, userName, onSubmitted }: UseUp
       imageUrl = data.publicUrl
     }
 
+    const dbDescription = formatDescriptionToDb(description, profiles)
+
     /* Insert update */
     const { error } = await supabase.from("updates").insert([
       {
         week_id: weekId,
         title,
-        description,
+        description: dbDescription,
         submitted_by: userId,
         submitted_by_name: userName,
         impact_score: impactScore,

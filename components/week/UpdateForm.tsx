@@ -3,6 +3,8 @@
 import Button from "@/components/ui/Button"
 import Card from "@/components/ui/Card"
 import { useUpdateSubmit } from "./useUpdateSubmit"
+import MentionTextarea from "@/components/ui/MentionTextarea"
+import { useProfiles } from "@/lib/hooks/useProfiles"
 
 type Props = {
   weekId: string
@@ -12,6 +14,7 @@ type Props = {
 }
 
 export default function UpdateForm(props: Props) {
+  const { profiles } = useProfiles()
   const {
     title,
     setTitle,
@@ -56,9 +59,10 @@ export default function UpdateForm(props: Props) {
         <div className="space-y-2">
           <label className="text-sm text-gray-400">Description</label>
 
-          <textarea
+          <MentionTextarea
+            profiles={profiles}
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChangeValue={setDescription}
             required
             rows={4}
             className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-white resize-none"
