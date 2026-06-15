@@ -5,6 +5,8 @@ import { useSortable } from "@dnd-kit/sortable"
 import Card from "../ui/Card"
 import Button from "../ui/Button"
 import { CSS } from "@dnd-kit/utilities"
+import { useProfiles } from "@/lib/hooks/useProfiles"
+import { renderDescriptionWithMentions } from "@/lib/mentions"
 
 export default function SortableItem({
   update,
@@ -17,6 +19,7 @@ export default function SortableItem({
   onEdit: (update: Update) => void
   sortable: boolean
 }) {
+  const { profiles } = useProfiles()
   const {
     attributes,
     listeners,
@@ -91,7 +94,7 @@ export default function SortableItem({
             {/* Description */}
             <div className="flex-1">
               <p className="text-gray-400 leading-relaxed whitespace-pre-line">
-                {update.description}
+                {renderDescriptionWithMentions(update.description, profiles)}
               </p>
             </div>
 

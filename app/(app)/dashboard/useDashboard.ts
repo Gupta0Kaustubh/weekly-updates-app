@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { Update } from "@/types"
+import { useProfiles } from "@/lib/hooks/useProfiles"
+import { formatDescriptionToDisplay } from "@/lib/mentions"
 
 export type WeekCard = {
   id: string
@@ -11,11 +13,11 @@ export type WeekCard = {
 }
 
 export function useDashboard() {
+  const { profiles, loading: profilesLoading } = useProfiles()
   const [weeks, setWeeks] = useState<WeekCard[]>([])
   const [allWeeks, setAllWeeks] = useState<WeekCard[]>([])
   const [loading, setLoading] = useState(true)
 
-  const [profileNames, setProfileNames] = useState<string[]>([])
   const [selectedNames, setSelectedNames] = useState<string[]>([])
   const [searchText, setSearchText] = useState("")
 
@@ -25,7 +27,9 @@ export function useDashboard() {
   const [years, setYears] = useState<string[]>([])
   const [selectedYears, setSelectedYears] = useState<string[]>([])
 
-  // Fetch newsletters and profiles
+  const profileNames = profiles.map((p) => p.name)
+
+  // Fetch newsletters
   useEffect(() => {
     const fetchNewsletters = async () => {
       const { data, error } = await supabase
@@ -95,17 +99,7 @@ export function useDashboard() {
       setLoading(false)
     }
 
-    const fetchProfiles = async () => {
-      const { data, error } = await supabase.from("profiles").select("name")
-      if (error) {
-        console.error(error)
-        return
-      }
-      if (data) setProfileNames(data.map((p: any) => p.name))
-    }
-
     fetchNewsletters()
-    fetchProfiles()
   }, [])
 
   // Combined filter: people + months + years
@@ -116,7 +110,8 @@ export function useDashboard() {
     if (selectedNames.length > 0 || searchText) {
       filtered = filtered.filter((week) =>
         week.updates.some((update) => {
-          const normalizedDescription = update.description?.replace(/\s+/g, "").toLowerCase()
+          const displayDescription = formatDescriptionToDisplay(update.description, profiles)
+          const normalizedDescription = displayDescription.replace(/\s+/g, "").toLowerCase()
 
           // Dropdown selection match
           const selectedMatch = selectedNames.some((name) => {
@@ -152,11 +147,11 @@ export function useDashboard() {
     }
 
     setWeeks(filtered)
-  }, [selectedNames, selectedMonths, selectedYears, searchText, allWeeks])
+  }, [selectedNames, selectedMonths, selectedYears, searchText, allWeeks, profiles])
 
   return {
     weeks,
-    loading,
+    loading: loading || profilesLoading,
     profileNames,
     selectedNames,
     setSelectedNames,

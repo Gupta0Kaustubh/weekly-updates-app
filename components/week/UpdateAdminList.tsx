@@ -6,6 +6,8 @@ import { getUpdatesByWeek } from "@/services/updateService"
 import { supabase } from "@/lib/supabase"
 import Card from "@/components/ui/Card"
 import Button from "@/components/ui/Button"
+import { useProfiles } from "@/lib/hooks/useProfiles"
+import { renderDescriptionWithMentions } from "@/lib/mentions"
 
 type Props = {
   weekId: string
@@ -14,6 +16,7 @@ type Props = {
 }
 
 export default function UpdateAdminList({ weekId, refreshKey, onRefresh }: Props) {
+  const { profiles } = useProfiles()
   const [updates, setUpdates] = useState<Update[]>([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
@@ -54,7 +57,7 @@ export default function UpdateAdminList({ weekId, refreshKey, onRefresh }: Props
       {updates.map((update) => (
         <Card key={update.id}>
           <strong className="text-white">{update.title}</strong>
-          <p className="text-gray-300">{update.description}</p>
+          <p className="text-gray-300">{renderDescriptionWithMentions(update.description, profiles)}</p>
           <small className="text-gray-400">Status: {update.status}</small>
           <div className="flex gap-2 mt-2">
             <Button

@@ -5,6 +5,8 @@ import Card from "@/components/ui/Card"
 import Button from "@/components/ui/Button"
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import { useProfiles } from "@/lib/hooks/useProfiles"
+import { renderDescriptionWithMentions } from "@/lib/mentions"
 
 type Props = {
   update: Update
@@ -17,6 +19,7 @@ export default function SortableUpdateItem({
   sortable,
   onAction,
 }: Props) {
+  const { profiles } = useProfiles()
   const {
     attributes,
     listeners,
@@ -71,7 +74,7 @@ export default function SortableUpdateItem({
           <div className="mb-4 flex items-start gap-4">
             <div className="flex-1">
               <p className="text-gray-400 leading-relaxed whitespace-pre-line">
-                {update.description}
+                {renderDescriptionWithMentions(update.description, profiles)}
               </p>
             </div>
 
