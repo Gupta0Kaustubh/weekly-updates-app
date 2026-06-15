@@ -1,15 +1,18 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import MentionTextarea from "@/components/ui/MentionTextarea"
+import { Profile } from "@/types"
 
 type Props = {
   open: boolean
   update: any
+  profiles: Profile[]
   onCancel: () => void
   onSave: (data: { title: string; description: string }) => void
 }
 
-export default function EditUpdateDialog({ open, update, onCancel, onSave }: Props) {
+export default function EditUpdateDialog({ open, update, profiles, onCancel, onSave }: Props) {
 
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
@@ -41,10 +44,11 @@ export default function EditUpdateDialog({ open, update, onCancel, onSave }: Pro
           onChange={(e) => setTitle(e.target.value)}
         />
 
-        <textarea
+        <MentionTextarea
+          profiles={profiles}
           className="w-full bg-gray-800 p-2 rounded h-32"
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChangeValue={setDescription}
         />
 
         <div className="flex justify-end gap-3 pt-2">
