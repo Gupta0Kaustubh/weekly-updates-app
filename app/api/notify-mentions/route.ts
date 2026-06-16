@@ -1,18 +1,26 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { genAI } from "@/lib/gemini"
 import type { newsLetterApproveUpdates } from "@/types/index"
 
-// Admin client created once at module scope — avoids generic type mismatch
-// when passing the client as a function argument.
+// ─────────────────────────────────────────────────────────────────────────────
+// Clients (module-scope singletons)
+// ─────────────────────────────────────────────────────────────────────────────
+
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
 
+type MentionAnalysis = {
+  name: string
+  reason: string
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -58,37 +66,115 @@ async function resolveTokensToNames(tokens: string[]): Promise<string[]> {
 }
 
 /**
- * Builds a Teams MessageCard payload.
- * Compatible with all Teams Incoming Webhook connectors.
+ * Uses Gemini AI to read the full newsletter content and generate a
+ * personalised, contextual reason for each mentioned team member.
+ *
+ * Falls back to a generic reason if AI fails or returns unexpected output.
+ */
+async function analyzeMentionsWithAI(
+  updates: newsLetterApproveUpdates[],
+  mentionedNames: string[],
+  weekTitle: string
+): Promise<MentionAnalysis[]> {
+  // Build a readable newsletter digest for the AI prompt
+  const newsletterContent = updates
+    .map(
+      (u, i) =>
+        `Article ${i + 1}: "${u.title}"
+Submitted by: ${u.submitted_by_name ?? "Unknown"}
+Content: ${u.description}`
+    )
+    .join("\n\n---\n\n")
+
+  const prompt = `
+You are reading the company's internal weekly newsletter. Below is the full content of this week's edition.
+
+NEWSLETTER: "${weekTitle}"
+
+${newsletterContent}
+
+---
+
+The following team members were @mentioned somewhere in the newsletter:
+${mentionedNames.map((n) => `- ${n}`).join("\n")}
+
+Your task:
+For EACH mentioned person, write a single warm, professional, and specific sentence explaining WHY they were mentioned — based on the actual newsletter content. Focus on what they contributed, achieved, or were recognised for.
+
+Return ONLY a valid JSON array. No markdown, no explanation, raw JSON only:
+[
+  { "name": "Full Name", "reason": "Warm, specific sentence about their contribution." }
+]
+`
+
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" })
+    const result = await model.generateContent(prompt)
+    const rawText = result.response.text().trim()
+
+    // Strip markdown fences if the model wrapped output
+    const cleaned = rawText
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim()
+
+    const parsed: MentionAnalysis[] = JSON.parse(cleaned)
+
+    // Validate structure — ensure every item has name + reason strings
+    if (
+      Array.isArray(parsed) &&
+      parsed.every(
+        (item) =>
+          typeof item.name === "string" && typeof item.reason === "string"
+      )
+    ) {
+      return parsed
+    }
+
+    throw new Error("AI returned unexpected structure")
+  } catch (err) {
+    console.warn("AI mention analysis failed, using fallback:", err)
+
+    // Graceful fallback — generic reason for each person
+    return mentionedNames.map((name) => ({
+      name,
+      reason: `${name} was mentioned in this week's newsletter edition.`,
+    }))
+  }
+}
+
+/**
+ * Builds a rich Teams MessageCard with AI-generated contextual summaries
+ * for each mentioned team member.
  */
 function buildTeamsCard(
-  mentionedNames: string[],
+  aiAnalysis: MentionAnalysis[],
   weekTitle: string,
   appUrl: string
 ): object {
-  const nameList = mentionedNames.map((n) => `• ${n}`).join("\n\n")
+  // Each mentioned person gets their own fact row in the Teams card
+  const facts = aiAnalysis.map((item) => ({
+    name: `👤 ${item.name}`,
+    value: item.reason,
+  }))
 
   return {
     "@type": "MessageCard",
     "@context": "http://schema.org/extensions",
     themeColor: "4F46E5",
-    summary: "You were mentioned in the Weekly Chronicle",
+    summary: "Team members were mentioned in the Weekly Chronicle",
     sections: [
       {
         activityTitle: "📰 Weekly Chronicle — New Edition Published!",
         activitySubtitle: weekTitle,
         activityImage:
           "https://em-content.zobj.net/source/microsoft-teams/363/newspaper_1f4f0.png",
-        facts: [
-          {
-            name: "Mentioned team members:",
-            value: mentionedNames.join(", "),
-          },
-        ],
         markdown: true,
       },
       {
-        text: `The following people were mentioned in this week's newsletter:\n\n${nameList}`,
+        title: "🔔 Mentioned Team Members",
+        facts,
         markdown: true,
       },
     ],
@@ -122,7 +208,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { approvedUpdates, weekTitle } = await req.json() as {
+    const { approvedUpdates, weekTitle } = (await req.json()) as {
       approvedUpdates: newsLetterApproveUpdates[]
       weekTitle: string
     }
@@ -156,12 +242,19 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // 3. Build and post the Teams card
-    const appUrl =
-      process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+    // 3. Use AI to understand WHY each person was mentioned
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
 
-    const card = buildTeamsCard(mentionedNames, weekTitle, appUrl)
+    const aiAnalysis = await analyzeMentionsWithAI(
+      approvedUpdates,
+      mentionedNames,
+      weekTitle
+    )
 
+    // 4. Build a rich Teams card with AI-generated context per person
+    const card = buildTeamsCard(aiAnalysis, weekTitle, appUrl)
+
+    // 5. Post the card to the Teams channel
     const teamsRes = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -181,6 +274,7 @@ export async function POST(req: NextRequest) {
       success: true,
       notifiedCount: mentionedNames.length,
       names: mentionedNames,
+      aiAnalysis,
     })
   } catch (err) {
     console.error("notify-mentions error:", err)
