@@ -4,10 +4,32 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 
+interface OrbStyle {
+  width: string
+  height: string
+  top: string
+  left: string
+  animation: string
+}
+
 /* --------------------------- */
 /* 🔹 Background Animation     */
 /* --------------------------- */
 function BackgroundAnimation() {
+  const [orbs, setOrbs] = useState<OrbStyle[]>([])
+
+  useEffect(() => {
+    // Generate random layout values safely only on the client browser
+    const generatedOrbs = [...Array(20)].map((_, i) => ({
+      width: `${Math.random() * 80 + 20}px`,
+      height: `${Math.random() * 80 + 20}px`,
+      top: `${Math.random() * 100}%`,
+      left: `${Math.random() * 100}%`,
+      animation: `float-ultra-${i % 3} ${Math.random() * 4 + 2}s ease-in-out infinite`,
+    }))
+    setOrbs(generatedOrbs)
+  }, [])
+
   return (
     <div className="absolute inset-0 -z-10 overflow-hidden">
 
@@ -19,18 +41,12 @@ function BackgroundAnimation() {
 
       <div className="absolute w-[700px] h-[700px] bg-blue-500/30 blur-[150px] rounded-full animate-spin-reverse bottom-[10%] right-[10%]" />
 
-      {/* Floating Orbs */}
-      {[...Array(20)].map((_, i) => (
+      {/* Floating Orbs - Renders safely when client values load */}
+      {orbs.map((style, i) => (
         <span
           key={i}
           className="absolute block rounded-full opacity-40 bg-white/30"
-          style={{
-            width: `${Math.random() * 80 + 20}px`,
-            height: `${Math.random() * 80 + 20}px`,
-            top: `${Math.random() * 100}%`,
-            left: `${Math.random() * 100}%`,
-            animation: `float-ultra-${i % 3} ${Math.random() * 4 + 2}s ease-in-out infinite`,
-          }}
+          style={style}
         />
       ))}
 
