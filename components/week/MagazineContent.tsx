@@ -1,3 +1,5 @@
+import { useProfiles } from "@/lib/hooks/useProfiles"
+import { renderDescriptionWithMentions } from "@/lib/mentions"
 import { Update, ThemeConfig } from "@/types"
 
 type Props = {
@@ -63,6 +65,9 @@ function renderMentions(text: string, color: string, bg: string) {
 }
 
 export default function MagazineContent({ updates, weekTitle, theme: themeProp }: Props) {
+  const { profiles } = useProfiles()
+
+
   const t = { ...defaultTheme, ...themeProp }
   const fontFamily = fontFamilyMap[t.fontFamily]
   const imgFilter = imageFilterMap[t.imageFilter]
@@ -131,7 +136,7 @@ export default function MagazineContent({ updates, weekTitle, theme: themeProp }
 
       {/* Image */}
       {update.image_url && (
-        <figure 
+        <figure
           className="mb-8 overflow-hidden transition-transform duration-700 hover:scale-[1.02]"
           style={{ borderRadius: "var(--article-radius)" }}
         >
@@ -154,7 +159,7 @@ export default function MagazineContent({ updates, weekTitle, theme: themeProp }
           }
           style={{ color: t.bodyTextColor }}
         >
-          {renderMentions(update.description, t.mentionColor, t.mentionBg)}
+          {renderDescriptionWithMentions(update.description, profiles, "font-semibold text-indigo-600 bg-indigo-100 px-1 rounded")}
         </p>
       </div>
     </article>
@@ -163,11 +168,11 @@ export default function MagazineContent({ updates, weekTitle, theme: themeProp }
   return (
     <div
       className="min-h-screen transition-all duration-700"
-      style={{ 
-        backgroundColor: t.backgroundColor, 
-        color: t.bodyTextColor, 
+      style={{
+        backgroundColor: t.backgroundColor,
+        color: t.bodyTextColor,
         fontFamily,
-        ...aiStyles 
+        ...aiStyles
       }}
     >
       {/* ── Header ── */}
@@ -176,14 +181,14 @@ export default function MagazineContent({ updates, weekTitle, theme: themeProp }
         style={{ backgroundColor: t.headerBg, borderBottom: `4px double ${t.borderColor}` }}
       >
         {t.headerEmoji && <div className="text-7xl mb-6 animate-bounce">{t.headerEmoji}</div>}
-        <h1 
-          className="font-black tracking-tighter uppercase px-6 leading-none" 
+        <h1
+          className="font-black tracking-tighter uppercase px-6 leading-none"
           style={{ color: t.headerTextColor, fontSize: "var(--header-size)" }}
         >
           {weekTitle || "The Weekly Journal"}
         </h1>
-        <p 
-          className="mt-6 text-xs uppercase opacity-70 font-semibold" 
+        <p
+          className="mt-6 text-xs uppercase opacity-70 font-semibold"
           style={{ color: t.headerTextColor, letterSpacing: "var(--tagline-tracking)" }}
         >
           {formatDate()} • {t.tagline}
@@ -191,11 +196,11 @@ export default function MagazineContent({ updates, weekTitle, theme: themeProp }
       </header>
 
       {/* ── Dynamic Layout Engine ── */}
-      <main 
+      <main
         className="max-w-7xl mx-auto px-6 md:px-16 py-16"
         style={{ gap: "var(--grid-gap)" }}
       >
-        
+
         {/* 1. HERO GRID */}
         {t.layout === "hero-grid" ? (
           <div style={{ display: 'grid', gap: 'var(--grid-gap)' }}>
@@ -206,25 +211,25 @@ export default function MagazineContent({ updates, weekTitle, theme: themeProp }
               ))}
             </div>
           </div>
-        ) 
-        
-        // 2. MAGAZINE SPREAD
-        : t.layout === "magazine-spread" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3" style={{ gap: 'var(--grid-gap)' }}>
-            {updates.map((u, i) => (
-              <Article key={u.id} update={u} index={i} />
-            ))}
-          </div>
         )
 
-        // 3. DEFAULT/EDITORIAL
-        : (
-          <div className="max-w-4xl mx-auto" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--grid-gap)' }}>
-            {updates.map((u, i) => (
-              <Article key={u.id} update={u} index={i} isHero={i === 0 && t.layout === "editorial"} />
-            ))}
-          </div>
-        )}
+          // 2. MAGAZINE SPREAD
+          : t.layout === "magazine-spread" ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3" style={{ gap: 'var(--grid-gap)' }}>
+              {updates.map((u, i) => (
+                <Article key={u.id} update={u} index={i} />
+              ))}
+            </div>
+          )
+
+            // 3. DEFAULT/EDITORIAL
+            : (
+              <div className="max-w-4xl mx-auto" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--grid-gap)' }}>
+                {updates.map((u, i) => (
+                  <Article key={u.id} update={u} index={i} isHero={i === 0 && t.layout === "editorial"} />
+                ))}
+              </div>
+            )}
 
       </main>
     </div>
