@@ -9,40 +9,43 @@ type SortableActionsProps = {
   newsletterRef: RefObject<HTMLDivElement | null>;
 }
 
+/**
+ * Captures the newsletter DOM node as a high-resolution PNG data URL.
+ * Temporarily resets any CSS transforms so the full content is captured correctly.
+ */
+async function captureNewsletterAsPng(newsletterRef: RefObject<HTMLDivElement | null>): Promise<string> {
+  const newsletterDiv = newsletterRef.current!
+  const innerDiv = newsletterDiv.firstElementChild as HTMLElement
+
+  // Temporarily reset zoom and overflow so the full content is visible
+  const prevScale = innerDiv.style.transform
+  const prevOverflow = newsletterDiv.style.overflow
+  innerDiv.style.transform = "scale(1)"
+  newsletterDiv.style.overflow = "visible"
+  newsletterDiv.style.height = `${innerDiv.scrollHeight}px`
+
+  const dataUrl = await htmlToImage.toPng(newsletterDiv, {
+    cacheBust: true,
+    pixelRatio: 2,
+  })
+
+  // Restore original styles
+  innerDiv.style.transform = prevScale
+  newsletterDiv.style.overflow = prevOverflow
+  newsletterDiv.style.height = "100%"
+
+  return dataUrl
+}
+
 export function SortableActions({ weekId, approvedUpdates, newsletterRef }: SortableActionsProps) {
   const handleDownload = async () => {
     if (!newsletterRef.current) return
-
     try {
-      const newsletterDiv = newsletterRef.current
-      const innerDiv = newsletterDiv.firstElementChild as HTMLElement
-
-      // Temporarily reset zoom and overflow
-      const prevScale = innerDiv.style.transform
-      const prevOverflow = newsletterDiv.style.overflow
-      innerDiv.style.transform = "scale(1)"
-      newsletterDiv.style.overflow = "visible"
-
-      // Set width and height to match full scrollable content
-      newsletterDiv.style.height = `${innerDiv.scrollHeight}px`
-
-      // Capture the image
-      const dataUrl = await htmlToImage.toPng(newsletterDiv, {
-        cacheBust: true, // avoids cached images
-        pixelRatio: 2    // higher resolution
-      })
-
-      // Restore styles
-      innerDiv.style.transform = prevScale
-      newsletterDiv.style.overflow = prevOverflow
-      newsletterDiv.style.height = "100%"
-
-      // Trigger download
+      const dataUrl = await captureNewsletterAsPng(newsletterRef)
       const link = document.createElement("a")
-      link.download = `weekly_newsletter_full.png`
+      link.download = "weekly_newsletter_full.png"
       link.href = dataUrl
       link.click()
-
     } catch (err) {
       console.error("Failed to download full newsletter image:", err)
     }
@@ -50,28 +53,10 @@ export function SortableActions({ weekId, approvedUpdates, newsletterRef }: Sort
 
   const handleShare = async () => {
     if (!newsletterRef.current) return
-
     try {
-      const newsletterDiv = newsletterRef.current
-      const innerDiv = newsletterDiv.firstElementChild as HTMLElement
-
-      const prevScale = innerDiv.style.transform
-      const prevOverflow = newsletterDiv.style.overflow
-      newsletterDiv.style.overflow = "visible"
-      innerDiv.style.transform = "scale(1)"
-      newsletterDiv.style.height = `${innerDiv.scrollHeight}px`
-
-      // Generate PNG as Data URL
-      const dataUrl = await htmlToImage.toPng(newsletterDiv, { cacheBust: true, pixelRatio: 2 })
-
-      innerDiv.style.transform = prevScale
-      newsletterDiv.style.overflow = prevOverflow
-      newsletterDiv.style.height = "100%"
-
-      // Convert Data URL to base64
+      const dataUrl = await captureNewsletterAsPng(newsletterRef)
       const base64 = dataUrl.replace(/^data:image\/png;base64,/, "")
 
-      // Send to API
       await fetch("/api/send-newsletter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -82,7 +67,6 @@ export function SortableActions({ weekId, approvedUpdates, newsletterRef }: Sort
       })
 
       alert("Newsletter sent successfully!")
-
     } catch (err) {
       console.error("Failed to share newsletter:", err)
       alert("Failed to send newsletter.")

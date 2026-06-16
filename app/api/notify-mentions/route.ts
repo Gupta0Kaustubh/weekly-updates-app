@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { genAI } from "@/lib/gemini"
-import type { newsLetterApproveUpdates } from "@/types/index"
+import type { Update } from "@/types"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Clients (module-scope singletons)
@@ -64,7 +64,7 @@ async function resolveIdsToNames(userIds: string[]): Promise<string[]> {
  * Falls back to a generic reason if AI fails or returns unexpected output.
  */
 async function analyzeMentionsWithAI(
-  updates: newsLetterApproveUpdates[],
+  updates: Update[],
   mentionedNames: string[],
   weekTitle: string
 ): Promise<MentionAnalysis[]> {
@@ -201,7 +201,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { approvedUpdates, weekTitle } = (await req.json()) as {
-      approvedUpdates: newsLetterApproveUpdates[]
+      approvedUpdates: Update[]
       weekTitle: string
     }
 

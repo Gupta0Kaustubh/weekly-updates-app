@@ -2,16 +2,8 @@
 
 import { useState } from "react"
 import MagazineContent from "@/components/week/MagazineContent"
-import { Update, ThemeConfig } from "@/types"
+import { WeekCard, ThemeConfig } from "@/types"
 import { Sparkles, RefreshCw, X, Palette } from "lucide-react"
-
-type WeekCard = {
-  id: string
-  title: string
-  start_date: string
-  end_date: string
-  updates: Update[]
-}
 
 const OCCASIONS = [
   { value: "general", label: "📰  General Newsletter" },

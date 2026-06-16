@@ -48,21 +48,7 @@ function formatDate() {
   })
 }
 
-function renderMentions(text: string, color: string, bg: string) {
-  return text.split(/(@\w+)/g).map((part, i) =>
-    part.startsWith("@") ? (
-      <span
-        key={i}
-        style={{ color, backgroundColor: bg }}
-        className="font-semibold px-1 rounded inline-block"
-      >
-        {part}
-      </span>
-    ) : (
-      part
-    )
-  )
-}
+
 
 export default function MagazineContent({ updates, weekTitle, theme: themeProp }: Props) {
   const { profiles } = useProfiles()
