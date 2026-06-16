@@ -58,6 +58,39 @@ async function resolveIdsToNames(userIds: string[]): Promise<string[]> {
 }
 
 /**
+ * Fetches all profiles and returns a UUID → name map.
+ * Used to replace <@uuid> tokens with human-readable @Name before
+ * passing description text to the AI.
+ */
+async function buildIdToNameMap(): Promise<Map<string, string>> {
+  const { data: profiles } = await supabaseAdmin
+    .from("profiles")
+    .select("id, name")
+
+  const map = new Map<string, string>()
+  if (profiles) {
+    for (const p of profiles) {
+      map.set(p.id as string, p.name as string)
+    }
+  }
+  return map
+}
+
+/**
+ * Replaces all <@uuid> tokens in a text string with "@Name" using the
+ * provided id→name map. This produces human-readable text suitable for AI.
+ */
+function resolveUuidsInText(text: string, idToName: Map<string, string>): string {
+  return text.replace(
+    /<@([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})>/g,
+    (_, id) => {
+      const name = idToName.get(id)
+      return name ? `@${name}` : "@teammate"
+    }
+  )
+}
+
+/**
  * Uses Gemini AI to read the full newsletter content and generate a
  * personalised, contextual reason for each mentioned team member.
  *
@@ -68,13 +101,16 @@ async function analyzeMentionsWithAI(
   mentionedNames: string[],
   weekTitle: string
 ): Promise<MentionAnalysis[]> {
+  // Resolve all <@uuid> tokens in descriptions to @Name before the AI sees them
+  const idToName = await buildIdToNameMap()
+
   // Build a readable newsletter digest for the AI prompt
   const newsletterContent = updates
     .map(
       (u, i) =>
         `Article ${i + 1}: "${u.title}"
 Submitted by: ${u.submitted_by_name ?? "Unknown"}
-Content: ${u.description}`
+Content: ${resolveUuidsInText(u.description ?? "", idToName)}`
     )
     .join("\n\n---\n\n")
 
@@ -91,8 +127,8 @@ The following team members were @mentioned somewhere in the newsletter:
 ${mentionedNames.map((n) => `- ${n}`).join("\n")}
 
 Your task:
-For EACH mentioned person, write a single warm, professional, and specific sentence explaining WHY they were mentioned — based on the actual newsletter content. Focus on what they contributed, achieved, or were recognised for.
-
+For each mentioned person, write a single warm, professional, and specific sentence explaining WHY they were mentioned — based on the actual newsletter content. Focus on what they contributed, achieved, or were recognised for.
+There might be multiple reasons a person is mentioned so try to capture all of them in one or at max 2 sentences.
 Return ONLY a valid JSON array. No markdown, no explanation, raw JSON only:
 [
   { "name": "Full Name", "reason": "Warm, specific sentence about their contribution." }
