@@ -59,3 +59,10 @@ type WeekCard = {
   end_date: string
   updates: Update[]
 }
+
+export type newsLetterApproveUpdates = {
+  id: string
+  title: string
+  description: string
+  submitted_by_name?: string
+}
