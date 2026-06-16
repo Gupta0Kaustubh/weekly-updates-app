@@ -93,14 +93,13 @@ export function SortableActions({ weekId, approvedUpdates, newsletterRef }: Sort
     if (!weekId) return
 
     try {
-
-      // Remove previous publish for this week
+      // 1. Remove previous publish for this week
       await supabase
         .from("published_newsletters")
         .delete()
         .eq("week_id", weekId)
 
-      // Create rows from approved updates
+      // 2. Create rows from approved updates
       const rows = approvedUpdates.map((update, index) => ({
         week_id: weekId,
         update_id: update.id,
@@ -117,7 +116,41 @@ export function SortableActions({ weekId, approvedUpdates, newsletterRef }: Sort
         return
       }
 
-      alert("Newsletter published successfully!")
+      // 3. Fetch the week title for the Teams notification card
+      const { data: weekData } = await supabase
+        .from("weeks")
+        .select("title")
+        .eq("id", weekId)
+        .single()
+
+      // 4. Notify mentioned users via Teams webhook (non-blocking)
+      try {
+        const notifyRes = await fetch("/api/notify-mentions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            approvedUpdates,
+            weekTitle: weekData?.title ?? "This Week's Edition",
+          }),
+        })
+
+        const notifyData = await notifyRes.json()
+
+        if (notifyData.success) {
+          alert(
+            `✅ Newsletter published!\n\n🔔 Teams notification sent to ${notifyData.notifiedCount} mentioned member${notifyData.notifiedCount === 1 ? "" : "s"}: ${notifyData.names.join(", ")}`
+          )
+        } else if (notifyData.skipped) {
+          // No mentions found or webhook not configured — not a failure
+          alert(`✅ Newsletter published!\n\nℹ️ Teams notification skipped: ${notifyData.reason}`)
+        } else {
+          alert("✅ Newsletter published!\n\n⚠️ Teams notification could not be sent.")
+        }
+      } catch (notifyErr) {
+        // Teams notification failure must never block the publish flow
+        console.error("Teams notification failed:", notifyErr)
+        alert("✅ Newsletter published!\n\n⚠️ Teams notification could not be sent.")
+      }
 
     } catch (err) {
       console.error(err)
