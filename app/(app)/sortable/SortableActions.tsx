@@ -27,7 +27,7 @@ export function SortableActions({ weekId, approvedUpdates, newsletterRef }: Sort
       newsletterDiv.style.height = `${innerDiv.scrollHeight}px`
 
       // Capture the image
-      const dataUrl = await htmlToImage.toPng(newsletterDiv, { 
+      const dataUrl = await htmlToImage.toPng(newsletterDiv, {
         cacheBust: true, // avoids cached images
         pixelRatio: 2    // higher resolution
       })
@@ -125,6 +125,7 @@ export function SortableActions({ weekId, approvedUpdates, newsletterRef }: Sort
 
       // 4. Notify mentioned users via Teams webhook (non-blocking)
       try {
+        console.log("Notify")
         const notifyRes = await fetch("/api/notify-mentions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -138,18 +139,18 @@ export function SortableActions({ weekId, approvedUpdates, newsletterRef }: Sort
 
         if (notifyData.success) {
           alert(
-            `✅ Newsletter published!\n\n🔔 Teams notification sent to ${notifyData.notifiedCount} mentioned member${notifyData.notifiedCount === 1 ? "" : "s"}: ${notifyData.names.join(", ")}`
+            `Newsletter published!\n\n Teams notification sent to ${notifyData.notifiedCount} mentioned member${notifyData.notifiedCount === 1 ? "" : "s"}: ${notifyData.names.join(", ")}`
           )
         } else if (notifyData.skipped) {
           // No mentions found or webhook not configured — not a failure
-          alert(`✅ Newsletter published!\n\nℹ️ Teams notification skipped: ${notifyData.reason}`)
+          alert(`Newsletter published!\n\nℹ Teams notification skipped: ${notifyData.reason}`)
         } else {
-          alert("✅ Newsletter published!\n\n⚠️ Teams notification could not be sent.")
+          alert("Newsletter published!\n\n Teams notification could not be sent.")
         }
       } catch (notifyErr) {
         // Teams notification failure must never block the publish flow
         console.error("Teams notification failed:", notifyErr)
-        alert("✅ Newsletter published!\n\n⚠️ Teams notification could not be sent.")
+        alert("Newsletter published!\n\n Teams notification could not be sent.")
       }
 
     } catch (err) {
@@ -163,9 +164,9 @@ export function SortableActions({ weekId, approvedUpdates, newsletterRef }: Sort
       <button
         onClick={handlePublish}
         className={`font-bold py-2 px-5 rounded-lg shadow-lg text-white
-        ${approvedUpdates.length === 0 
-          ? "bg-gray-500 cursor-not-allowed opacity-50" 
-          : "bg-green-600 hover:bg-green-700"}
+        ${approvedUpdates.length === 0
+            ? "bg-gray-500 cursor-not-allowed opacity-50"
+            : "bg-green-600 hover:bg-green-700"}
       `}
         disabled={approvedUpdates.length === 0}
       >
@@ -175,11 +176,11 @@ export function SortableActions({ weekId, approvedUpdates, newsletterRef }: Sort
       <button
         onClick={handleDownload}
         className={`font-bold py-2 px-5 rounded-lg shadow-lg text-white
-        ${approvedUpdates.length === 0 
-          ? "bg-gray-500 cursor-not-allowed opacity-50" 
-          : "bg-indigo-600 hover:bg-indigo-700"}
+        ${approvedUpdates.length === 0
+            ? "bg-gray-500 cursor-not-allowed opacity-50"
+            : "bg-indigo-600 hover:bg-indigo-700"}
       `}
-      disabled={approvedUpdates.length === 0}
+        disabled={approvedUpdates.length === 0}
       >
         Download
       </button>
@@ -187,11 +188,11 @@ export function SortableActions({ weekId, approvedUpdates, newsletterRef }: Sort
       <button
         onClick={handleShare}
         className={`font-bold py-2 px-5 rounded-lg shadow-lg text-white
-        ${approvedUpdates.length === 0 
-          ? "bg-gray-500 cursor-not-allowed opacity-50" 
-          : "bg-blue-600 hover:bg-blue-700"}
+        ${approvedUpdates.length === 0
+            ? "bg-gray-500 cursor-not-allowed opacity-50"
+            : "bg-blue-600 hover:bg-blue-700"}
       `}
-      disabled={approvedUpdates.length === 0}
+        disabled={approvedUpdates.length === 0}
       >
         Share
       </button>

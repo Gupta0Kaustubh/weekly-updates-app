@@ -27,42 +27,34 @@ type MentionAnalysis = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Extracts unique @word tokens from a block of text.
- * Example: "Great work by @john and @priya!" → ["john", "priya"]
+ * Extracts unique user UUIDs from description text.
+ * Descriptions store mentions as <@uuid> e.g. <@3f2a1b4c-1234-...>
+ * Example: "Great work <@abc-uuid> and <@def-uuid>!" → ["abc-uuid", "def-uuid"]
  */
-function extractMentionTokens(text: string): string[] {
-  const matches = text.matchAll(/@(\w+)/g)
-  const tokens = new Set<string>()
-  for (const match of matches) {
-    tokens.add(match[1].toLowerCase())
+function extractMentionedUserIds(text: string): string[] {
+  const regex = /<@([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})>/g
+  const ids = new Set<string>()
+  for (const match of text.matchAll(regex)) {
+    ids.add(match[1])
   }
-  return Array.from(tokens)
+  return Array.from(ids)
 }
 
 /**
- * Given a list of @mention tokens, find matching profile full names
- * from the `profiles` table. Matches on the first word of the name
- * (case-insensitive). Returns deduplicated full names.
+ * Given a list of user UUIDs extracted from <@uuid> mentions, fetch
+ * their full names from the `profiles` table by ID. Returns deduplicated names.
  */
-async function resolveTokensToNames(tokens: string[]): Promise<string[]> {
-  if (tokens.length === 0) return []
+async function resolveIdsToNames(userIds: string[]): Promise<string[]> {
+  if (userIds.length === 0) return []
 
   const { data: profiles, error } = await supabaseAdmin
     .from("profiles")
     .select("name")
+    .in("id", userIds)
 
   if (error || !profiles) return []
 
-  const matchedNames = new Set<string>()
-
-  for (const profile of profiles) {
-    const firstName = (profile.name as string).split(" ")[0].toLowerCase()
-    if (tokens.includes(firstName)) {
-      matchedNames.add(profile.name as string)
-    }
-  }
-
-  return Array.from(matchedNames)
+  return profiles.map((p) => p.name as string)
 }
 
 /**
@@ -217,23 +209,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ skipped: true, reason: "No updates provided" })
     }
 
-    // 1. Extract all @mention tokens from all update descriptions
-    const allTokens: string[] = []
+    // 1. Extract all <@uuid> mention IDs from all update descriptions
+    const allUserIds: string[] = []
     for (const update of approvedUpdates) {
-      const tokens = extractMentionTokens(update.description ?? "")
-      allTokens.push(...tokens)
+      const ids = extractMentionedUserIds(update.description ?? "")
+      allUserIds.push(...ids)
     }
-    const uniqueTokens = [...new Set(allTokens)]
+    const uniqueUserIds = [...new Set(allUserIds)]
 
-    if (uniqueTokens.length === 0) {
+    if (uniqueUserIds.length === 0) {
       return NextResponse.json({
         skipped: true,
         reason: "No @mentions found in updates",
       })
     }
 
-    // 2. Resolve tokens to real profile names via Supabase
-    const mentionedNames = await resolveTokensToNames(uniqueTokens)
+    // 2. Resolve UUIDs to real profile names via Supabase
+    const mentionedNames = await resolveIdsToNames(uniqueUserIds)
 
     if (mentionedNames.length === 0) {
       return NextResponse.json({
