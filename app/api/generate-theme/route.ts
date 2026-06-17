@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { GoogleGenerativeAI } from "@google/generative-ai"
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
+import { genAI } from "@/lib/gemini"
 
 const THEME_PROMPT = (occasion: string, customPrompt: string) => `
 You are an expert magazine and email newsletter designer. 

@@ -1,16 +1,8 @@
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
-import { Update } from "@/types"
+import { Update, WeekCard } from "@/types"
 import { useProfiles } from "@/lib/hooks/useProfiles"
 import { formatDescriptionToDisplay } from "@/lib/mentions"
-
-export type WeekCard = {
-  id: string
-  title: string
-  start_date: string
-  end_date: string
-  updates: Update[]
-}
 
 export function useDashboard() {
   const { profiles, loading: profilesLoading } = useProfiles()

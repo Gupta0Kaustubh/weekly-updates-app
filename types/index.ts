@@ -52,10 +52,11 @@ export type Update = {
   order_index?: number
 }
 
-type WeekCard = {
+export type WeekCard = {
   id: string
   title: string
   start_date: string
   end_date: string
   updates: Update[]
 }
+

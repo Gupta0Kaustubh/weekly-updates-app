@@ -18,12 +18,14 @@ export default function DashboardLayout({
   useEffect(() => {
     const fetchRole = async () => {
       const { data: userData } = await supabase.auth.getUser()
-      if (!userData.user) return
+      if (!userData?.user) // Redirect to login page
+        router.push('/')
+
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("role")
-        .eq("id", userData.user.id)
+        ?.select("role")
+        ?.eq("id", userData.user?.id)
         .single()
 
       if (profile?.role) setRole(profile.role)
