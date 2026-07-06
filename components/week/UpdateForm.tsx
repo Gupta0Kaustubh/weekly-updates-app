@@ -26,7 +26,10 @@ export default function UpdateForm(props: Props) {
     loading,
     success,
     handleImageChange,
-    handleSubmit
+    handleSubmit,
+    aiFeedback,
+    isAiChecking,
+    setAiFeedback
   } = useUpdateSubmit(props)
 
   return (
@@ -129,10 +132,43 @@ export default function UpdateForm(props: Props) {
         </div>
 
         {/* Submit */}
-        <div className="flex justify-end">
-          <Button type="submit" disabled={loading}>
-            {loading ? "Submitting..." : "Submit Update"}
-          </Button>
+        <div className="flex flex-col space-y-3">
+          {aiFeedback && (
+            <div className="bg-orange-500/10 border border-orange-500/20 text-orange-400 p-4 rounded-lg text-sm">
+              <div className="flex items-start gap-2">
+                <span>⚠️</span>
+                <div>
+                  <p className="font-semibold mb-1">AI Suggestion</p>
+                  <p>{aiFeedback}</p>
+                </div>
+              </div>
+              <div className="mt-3 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setAiFeedback(null)}
+                  className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded text-gray-300 text-xs transition"
+                >
+                  Edit Update
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => handleSubmit(e, true)}
+                  disabled={loading}
+                  className="px-3 py-1.5 bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 rounded text-xs transition"
+                >
+                  {loading ? "Submitting..." : "Submit Anyway"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!aiFeedback && (
+            <div className="flex justify-end">
+              <Button type="submit" disabled={loading || isAiChecking}>
+                {isAiChecking ? "AI is reviewing..." : loading ? "Submitting..." : "Submit Update"}
+              </Button>
+            </div>
+          )}
         </div>
 
         {success && (
