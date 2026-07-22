@@ -136,7 +136,7 @@ Return ONLY a valid JSON array. No markdown, no explanation, raw JSON only:
 `
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" })
+    const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite" })
     const result = await model.generateContent(prompt)
     const rawText = result.response.text().trim()
 

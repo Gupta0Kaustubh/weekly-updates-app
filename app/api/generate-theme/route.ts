@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
   try {
     const { occasion, prompt } = await req.json()
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" })
+    const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite" })
 
     const result = await model.generateContent(THEME_PROMPT(occasion || "general", prompt || ""))
     const rawText = result.response.text().trim()
