@@ -20,6 +20,8 @@ export function useUpdateSubmit({ weekId, userId, userName, onSubmitted }: UseUp
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [aiFeedback, setAiFeedback] = useState<string | null>(null)
+  const [isAiChecking, setIsAiChecking] = useState(false)
 
   const handleImageChange = (file: File | null) => {
     if (!file) return
@@ -27,10 +29,36 @@ export function useUpdateSubmit({ weekId, userId, userName, onSubmitted }: UseUp
     setPreviewUrl(URL.createObjectURL(file))
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (e?: React.FormEvent, forceSubmit: boolean = false) => {
+    if (e) e.preventDefault()
+    
+    // If not bypassing, check with AI first
+    if (!forceSubmit) {
+      setIsAiChecking(true)
+      setAiFeedback(null)
+      try {
+        const res = await fetch("/api/analyze-update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, description }),
+        })
+        const analysis = await res.json()
+        
+        if (!analysis.worthMentioning) {
+          setAiFeedback(analysis.reason || "This update might need more details.")
+          setIsAiChecking(false)
+          return // Stop submission and let user review the feedback
+        }
+      } catch (err) {
+        console.error("Failed to analyze update", err)
+        // Proceed with submission if AI fails
+      }
+      setIsAiChecking(false)
+    }
+
     setLoading(true)
     setSuccess(false)
+    setAiFeedback(null)
 
     const {
       data: { user },
@@ -113,6 +141,9 @@ export function useUpdateSubmit({ weekId, userId, userName, onSubmitted }: UseUp
     loading,
     success,
     handleImageChange,
-    handleSubmit
+    handleSubmit,
+    aiFeedback,
+    isAiChecking,
+    setAiFeedback
   }
 }
